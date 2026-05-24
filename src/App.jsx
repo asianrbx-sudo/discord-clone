@@ -73,6 +73,11 @@ export default function App() {
 
   const handleSaveName = async () => {
     await updateProfile(auth.currentUser, { displayName })
+    await setDoc(doc(db, 'users', user.uid), {
+      displayName,
+      username: username.toLowerCase(),
+      pronouns
+    }, { merge: true })
     setUser({ ...user, displayName })
     setSaved(true)
     setTimeout(() => { setSaved(false); setEditingName(false) }, 1500)
@@ -191,7 +196,7 @@ export default function App() {
                     <input
                       type="text"
                       value={username}
-                      onChange={e => setUsername(e.target.value)}
+                      onChange={e => setUsername(e.target.value.toLowerCase())}
                       className="w-full bg-gray-900 text-white rounded px-2 py-1.5 outline-none focus:ring-2 focus:ring-indigo-500 mb-2 text-xs"
                     />
                     <label className="text-gray-400 text-xs font-bold uppercase mb-1 block">Pronouns</label>
