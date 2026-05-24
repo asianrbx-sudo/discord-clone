@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { auth, storage, db } from './firebase'
 import { onAuthStateChanged, signOut, updateProfile } from 'firebase/auth'
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage'
-import { doc, setDoc, serverTimestamp } from 'firebase/firestore'
+import { doc, setDoc, getDoc, serverTimestamp } from 'firebase/firestore'
 import Auth from './components/Auth'
 import AddFriend from './components/AddFriend'
 import FriendRequests from './components/FriendRequests'
@@ -37,16 +37,23 @@ export default function App() {
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, async (u) => {
       if (u) {
-        await setDoc(doc(db, 'users', u.uid), {
-          username: u.email?.split('@')[0].toLowerCase(),
-          displayName: u.displayName || u.email?.split('@')[0],
-          email: u.email,
-          photoURL: u.photoURL || '',
-          lastSeen: serverTimestamp()
-        }, { merge: true })
-
+        const userDoc = await getDoc(doc(db, 'users', u.uid))
+        if (!userDoc.exists()) {
+          await setDoc(doc(db, 'users', u.uid), {
+            username: u.email?.split('@')[0].toLowerCase(),
+            displayName: u.displayName || u.email?.split('@')[0],
+            email: u.email,
+            photoURL: u.photoURL || '',
+            lastSeen: serverTimestamp()
+          })
+          setUsername(u.email?.split('@')[0] || '')
+        } else {
+          await setDoc(doc(db, 'users', u.uid), {
+            lastSeen: serverTimestamp()
+          }, { merge: true })
+          setUsername(userDoc.data().username || u.email?.split('@')[0] || '')
+        }
         setDisplayName(u.displayName || '')
-        setUsername(u.email?.split('@')[0] || '')
       }
       setUser(u)
       setLoading(false)
