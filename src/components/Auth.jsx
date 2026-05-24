@@ -43,6 +43,8 @@ export default function Auth() {
           email: email,
           photoURL: '',
           dob: `${month}/${day}/${year}`,
+          pronouns: '',
+          lastSeen: serverTimestamp(),
           createdAt: serverTimestamp()
         })
       }
@@ -63,6 +65,8 @@ export default function Auth() {
         displayName: u.displayName || u.email?.split('@')[0],
         email: u.email,
         photoURL: u.photoURL || '',
+        pronouns: '',
+        lastSeen: serverTimestamp(),
         createdAt: serverTimestamp()
       }, { merge: true })
     } catch (err) {
