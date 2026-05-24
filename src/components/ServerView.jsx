@@ -4,12 +4,14 @@ import {
   collection, query, where, onSnapshot,
   addDoc, orderBy, serverTimestamp
 } from 'firebase/firestore'
+import InviteToServer from './InviteToServer'
 
 export default function ServerView({ server }) {
   const [channels, setChannels] = useState([])
   const [activeChannel, setActiveChannel] = useState(null)
   const [messages, setMessages] = useState([])
   const [input, setInput] = useState('')
+  const [showInvite, setShowInvite] = useState(false)
   const bottomRef = useRef(null)
 
   // Load channels
@@ -54,16 +56,25 @@ export default function ServerView({ server }) {
   }
 
   return (
-    <div className="flex flex-1 h-full">
+    <div className="flex flex-1 h-full overflow-hidden">
+
       {/* Channel Sidebar */}
       <div className="w-60 bg-gray-800 flex flex-col">
-        {/* Server Name */}
-        <div className="p-4 border-b border-gray-900 font-bold text-white shadow-md">
-          {server.name}
+
+        {/* Server Name + Invite Button */}
+        <div className="p-4 border-b border-gray-900 flex items-center justify-between shadow-md">
+          <p className="font-bold text-white truncate">{server.name}</p>
+          <button
+            onClick={() => setShowInvite(true)}
+            title="Invite Friends"
+            className="w-7 h-7 bg-gray-700 hover:bg-indigo-500 rounded flex items-center justify-center text-gray-400 hover:text-white transition text-lg"
+          >
+            +
+          </button>
         </div>
 
         {/* Channels */}
-        <div className="flex-1 px-2 pt-3">
+        <div className="flex-1 px-2 pt-3 overflow-y-auto">
           <p className="text-gray-500 text-xs font-bold px-2 mb-1 uppercase">Text Channels</p>
           {channels.map(channel => (
             <div
@@ -79,14 +90,29 @@ export default function ServerView({ server }) {
             </div>
           ))}
         </div>
+
+        {/* User Panel */}
+        <div className="p-3 bg-gray-900 flex items-center gap-2">
+          {auth.currentUser.photoURL ? (
+            <img src={auth.currentUser.photoURL} className="w-8 h-8 rounded-full object-cover" />
+          ) : (
+            <div className="w-8 h-8 bg-purple-500 rounded-full flex items-center justify-center font-bold text-xs text-white">
+              {auth.currentUser.email?.[0].toUpperCase()}
+            </div>
+          )}
+          <p className="text-xs font-bold text-white truncate">
+            {auth.currentUser.displayName || auth.currentUser.email}
+          </p>
+        </div>
       </div>
 
       {/* Chat Area */}
-      <div className="flex-1 flex flex-col">
+      <div className="flex-1 flex flex-col overflow-hidden">
+
         {/* Header */}
         <div className="px-4 py-3 border-b border-gray-900 font-bold flex items-center gap-2 shadow-md">
           <span className="text-gray-400">#</span>
-          {activeChannel?.name || 'Select a channel'}
+          <span className="text-white">{activeChannel?.name || 'Select a channel'}</span>
         </div>
 
         {/* Messages */}
@@ -109,7 +135,7 @@ export default function ServerView({ server }) {
               )}
               <div>
                 <div className="flex items-baseline gap-2">
-                  <span className="font-bold text-sm">{msg.displayName}</span>
+                  <span className="font-bold text-sm text-white">{msg.displayName}</span>
                   <span className="text-xs text-gray-400">
                     {msg.createdAt?.toDate().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                   </span>
@@ -125,7 +151,7 @@ export default function ServerView({ server }) {
         <div className="p-4">
           <div className="flex items-center bg-gray-600 rounded-lg px-4 py-2 gap-2">
             <input
-              className="flex-1 bg-transparent outline-none text-sm placeholder-gray-400"
+              className="flex-1 bg-transparent outline-none text-sm placeholder-gray-400 text-white"
               placeholder={`Message #${activeChannel?.name || 'channel'}`}
               value={input}
               onChange={e => e.target.value.length <= 2000 && setInput(e.target.value)}
@@ -140,6 +166,15 @@ export default function ServerView({ server }) {
           </div>
         </div>
       </div>
+
+      {/* Invite Modal */}
+      {showInvite && (
+        <InviteToServer
+          server={server}
+          onClose={() => setShowInvite(false)}
+        />
+      )}
+
     </div>
   )
 }
