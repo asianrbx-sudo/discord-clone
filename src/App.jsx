@@ -1,9 +1,11 @@
 import { useState, useEffect } from 'react'
-import { auth, storage } from './firebase'
+import { auth, storage, db } from './firebase'
 import { onAuthStateChanged, signOut, updateProfile } from 'firebase/auth'
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage'
+import { doc, setDoc, serverTimestamp } from 'firebase/firestore'
 import Auth from './components/Auth'
 import AddFriend from './components/AddFriend'
+import FriendRequests from './components/FriendRequests'
 
 const dms = []
 const tabs = ['Online', 'All', 'Pending', 'Blocked']
@@ -33,12 +35,20 @@ export default function App() {
   const [showAddFriend, setShowAddFriend] = useState(false)
 
   useEffect(() => {
-    const unsub = onAuthStateChanged(auth, (u) => {
-      setUser(u)
+    const unsub = onAuthStateChanged(auth, async (u) => {
       if (u) {
+        await setDoc(doc(db, 'users', u.uid), {
+          username: u.email?.split('@')[0].toLowerCase(),
+          displayName: u.displayName || u.email?.split('@')[0],
+          email: u.email,
+          photoURL: u.photoURL || '',
+          lastSeen: serverTimestamp()
+        }, { merge: true })
+
         setDisplayName(u.displayName || '')
         setUsername(u.email?.split('@')[0] || '')
       }
+      setUser(u)
       setLoading(false)
     })
     return unsub
@@ -135,7 +145,6 @@ export default function App() {
                     <p className="text-gray-400 text-xs">@{username}</p>
                     {pronouns && <p className="text-gray-400 text-xs">{pronouns}</p>}
 
-                    {/* Status Button */}
                     <div className="relative mt-2">
                       <button
                         onClick={(e) => { e.stopPropagation(); setShowStatusMenu(!showStatusMenu) }}
@@ -296,6 +305,8 @@ export default function App() {
         <div className="flex-1 overflow-hidden">
           {showAddFriend ? (
             <AddFriend onClose={() => setShowAddFriend(false)} />
+          ) : activeTab === 'Pending' ? (
+            <FriendRequests />
           ) : (
             <div className="flex-1 h-full flex items-center justify-center flex-col gap-3 text-gray-500">
               <span className="text-5xl">👥</span>
