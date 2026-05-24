@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { auth, storage, db } from './firebase'
 import { onAuthStateChanged, signOut, updateProfile } from 'firebase/auth'
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage'
-import { doc, setDoc, getDoc, serverTimestamp } from 'firebase/firestore'
+import { doc, setDoc, getDoc, serverTimestamp, collection, query, where, onSnapshot } from 'firebase/firestore'
 import Auth from './components/Auth'
 import AddFriend from './components/AddFriend'
 import FriendRequests from './components/FriendRequests'
@@ -36,6 +36,7 @@ export default function App() {
   const [showAddFriend, setShowAddFriend] = useState(false)
   const [activeDM, setActiveDM] = useState(null)
   const [dmList, setDmList] = useState([])
+  const [pendingCount, setPendingCount] = useState(0)
 
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, async (u) => {
@@ -64,6 +65,19 @@ export default function App() {
     return unsub
   }, [])
 
+  useEffect(() => {
+    if (!user) return
+    const q = query(
+      collection(db, 'friendRequests'),
+      where('to', '==', user.uid),
+      where('status', '==', 'pending')
+    )
+    const unsub = onSnapshot(q, (snap) => {
+      setPendingCount(snap.size)
+    })
+    return unsub
+  }, [user])
+
   const handleImageUpload = async (e) => {
     const file = e.target.files[0]
     if (!file) return
@@ -87,12 +101,10 @@ export default function App() {
   }
 
   const handleOpenDM = (friend) => {
-    // Create a consistent DM ID based on both user UIDs
     const dmId = [auth.currentUser.uid, friend.uid].sort().join('_')
     setActiveDM({ friend, dmId })
     setActiveNav('dm')
     setShowAddFriend(false)
-    // Add to DM list if not already there
     setDmList(prev => {
       if (prev.find(d => d.uid === friend.uid)) return prev
       return [...prev, friend]
@@ -135,6 +147,11 @@ export default function App() {
           className={`mx-2 px-2 py-2 rounded flex items-center gap-2 cursor-pointer ${activeNav === 'friends' ? 'bg-gray-600 text-white' : 'text-gray-400 hover:bg-gray-700 hover:text-white'}`}
         >
           <span>👥</span> Friends
+          {pendingCount > 0 && (
+            <span className="ml-auto w-5 h-5 bg-red-500 rounded-full text-white text-xs flex items-center justify-center">
+              {pendingCount}
+            </span>
+          )}
         </div>
 
         {/* DM List */}
@@ -341,9 +358,14 @@ export default function App() {
                   <button
                     key={tab}
                     onClick={() => { setActiveTab(tab); setShowAddFriend(false) }}
-                    className={`px-3 py-1 rounded text-sm ${activeTab === tab && !showAddFriend ? 'bg-gray-600 text-white' : 'text-gray-400 hover:bg-gray-700 hover:text-white'}`}
+                    className={`px-3 py-1 rounded text-sm relative ${activeTab === tab && !showAddFriend ? 'bg-gray-600 text-white' : 'text-gray-400 hover:bg-gray-700 hover:text-white'}`}
                   >
                     {tab}
+                    {tab === 'Pending' && pendingCount > 0 && (
+                      <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 rounded-full text-white text-xs flex items-center justify-center">
+                        {pendingCount}
+                      </span>
+                    )}
                   </button>
                 ))}
               </div>
