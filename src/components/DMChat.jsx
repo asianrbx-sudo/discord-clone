@@ -6,12 +6,18 @@ import {
   query,
   orderBy,
   onSnapshot,
-  serverTimestamp
+  serverTimestamp,
+  doc,
+  deleteDoc
 } from 'firebase/firestore'
+import VoiceCall from './VoiceCall'
+import IncomingCall from './IncomingCall'
 
 export default function DMChat({ friend, dmId }) {
   const [messages, setMessages] = useState([])
   const [input, setInput] = useState('')
+  const [inCall, setInCall] = useState(false)
+  const [incomingCall, setIncomingCall] = useState(null)
   const bottomRef = useRef(null)
 
   useEffect(() => {
@@ -21,6 +27,20 @@ export default function DMChat({ friend, dmId }) {
     )
     const unsub = onSnapshot(q, (snap) => {
       setMessages(snap.docs.map(d => ({ id: d.id, ...d.data() })))
+    })
+    return unsub
+  }, [dmId])
+
+  useEffect(() => {
+    const unsub = onSnapshot(doc(db, 'calls', dmId), (snap) => {
+      if (snap.exists()) {
+        const data = snap.data()
+        if (data.receiverId === auth.currentUser.uid && data.status === 'calling') {
+          setIncomingCall(data)
+        }
+      } else {
+        setIncomingCall(null)
+      }
     })
     return unsub
   }, [dmId])
@@ -45,12 +65,24 @@ export default function DMChat({ friend, dmId }) {
 
   return (
     <div className="flex-1 flex flex-col h-full">
+
       {/* Header */}
       <div className="px-4 py-3 border-b border-gray-900 flex items-center gap-2 shadow-md">
-        <div className="w-7 h-7 bg-indigo-500 rounded-full flex items-center justify-center font-bold text-xs">
-          {friend.displayName?.[0]?.toUpperCase()}
-        </div>
+        {friend.photoURL ? (
+          <img src={friend.photoURL} className="w-7 h-7 rounded-full object-cover" />
+        ) : (
+          <div className="w-7 h-7 bg-indigo-500 rounded-full flex items-center justify-center font-bold text-xs">
+            {friend.displayName?.[0]?.toUpperCase()}
+          </div>
+        )}
         <span className="font-bold">{friend.displayName}</span>
+        <button
+          onClick={() => setInCall(true)}
+          className="ml-auto w-8 h-8 bg-gray-700 hover:bg-green-600 rounded flex items-center justify-center text-gray-300 hover:text-white transition"
+          title="Voice Call"
+        >
+          📞
+        </button>
       </div>
 
       {/* Messages */}
@@ -100,12 +132,34 @@ export default function DMChat({ friend, dmId }) {
           />
           {input.length > 1800 && (
             <span className={`text-xs ${input.length > 1950 ? 'text-red-400' : 'text-yellow-400'}`}>
-                {2000 - input.length}
+              {2000 - input.length}
             </span>
-            )}
+          )}
           <button onClick={sendMessage} className="text-gray-400 hover:text-white">➤</button>
         </div>
       </div>
+
+      {/* Voice Call */}
+      {inCall && (
+        <VoiceCall
+          friend={friend}
+          dmId={dmId}
+          onEnd={() => setInCall(false)}
+        />
+      )}
+
+      {/* Incoming Call */}
+      {incomingCall && !inCall && (
+        <IncomingCall
+          call={incomingCall}
+          onAccept={() => { setIncomingCall(null); setInCall(true) }}
+          onDecline={async () => {
+            await deleteDoc(doc(db, 'calls', dmId))
+            setIncomingCall(null)
+          }}
+        />
+      )}
+
     </div>
   )
 }
