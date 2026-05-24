@@ -154,20 +154,18 @@ export default function App() {
 
       {/* Server Icons */}
       <div className="w-16 bg-gray-900 flex flex-col items-center py-3 gap-2 overflow-y-auto">
-        {/* Home Button */}
         <div
-          onClick={() => { setActiveNav('friends'); setActiveServer(null); setActiveDM(null) }}
+          onClick={(e) => { e.stopPropagation(); setActiveNav('friends'); setActiveServer(null); setActiveDM(null) }}
           className={`w-10 h-10 rounded-2xl flex items-center justify-center font-bold cursor-pointer hover:rounded-xl transition-all ${activeNav === 'friends' || activeNav === 'dm' ? 'bg-indigo-500' : 'bg-gray-700 hover:bg-indigo-500'}`}
         >
           D
         </div>
         <div className="w-8 border-t border-gray-600 my-1"></div>
 
-        {/* Server Icons */}
         {servers.map(server => (
           <div
             key={server.id}
-            onClick={() => handleOpenServer(server)}
+            onClick={(e) => { e.stopPropagation(); handleOpenServer(server) }}
             title={server.name}
             className={`w-10 h-10 rounded-full flex items-center justify-center font-bold cursor-pointer hover:rounded-xl transition-all text-white ${activeServer?.id === server.id ? 'bg-indigo-500 rounded-xl' : 'bg-gray-700 hover:bg-indigo-500'}`}
           >
@@ -175,7 +173,6 @@ export default function App() {
           </div>
         ))}
 
-        {/* Add Server */}
         <div
           onClick={(e) => { e.stopPropagation(); setShowCreateServer(true) }}
           className="w-10 h-10 bg-gray-700 hover:bg-green-500 rounded-full hover:rounded-xl transition-all flex items-center justify-center cursor-pointer text-green-400 hover:text-white font-bold text-lg"
@@ -184,7 +181,7 @@ export default function App() {
         </div>
       </div>
 
-      {/* DM Sidebar — only show when not in a server */}
+      {/* DM Sidebar */}
       {activeNav !== 'server' && (
         <div className="w-60 bg-gray-800 flex flex-col">
           <div className="p-3">
@@ -194,8 +191,8 @@ export default function App() {
           </div>
 
           <div
-            onClick={(e) => { e.stopPropagation(); alert('clicked!'); setShowCreateServer(true) }}
-            className="w-10 h-10 bg-gray-700 hover:bg-green-500 rounded-full hover:rounded-xl transition-all flex items-center justify-center cursor-pointer text-green-400 hover:text-white font-bold text-lg"
+            onClick={(e) => { e.stopPropagation(); setActiveNav('friends'); setShowAddFriend(false); setActiveDM(null) }}
+            className={`mx-2 px-2 py-2 rounded flex items-center gap-2 cursor-pointer ${activeNav === 'friends' ? 'bg-gray-600 text-white' : 'text-gray-400 hover:bg-gray-700 hover:text-white'}`}
           >
             <span>👥</span> Friends
             {pendingCount > 0 && (
@@ -210,7 +207,7 @@ export default function App() {
           {dmList.map(friend => (
             <div
               key={friend.uid}
-              onClick={() => handleOpenDM(friend)}
+              onClick={(e) => { e.stopPropagation(); handleOpenDM(friend) }}
               className={`mx-2 px-2 py-1.5 rounded flex items-center gap-2 cursor-pointer ${activeDM?.friend.uid === friend.uid ? 'bg-gray-600 text-white' : 'text-gray-400 hover:bg-gray-700 hover:text-white'}`}
             >
               {friend.photoURL ? (
@@ -404,9 +401,7 @@ export default function App() {
       {showCreateServer && (
         <CreateServer
           onClose={() => setShowCreateServer(false)}
-          onCreated={(serverId) => {
-            setShowCreateServer(false)
-          }}
+          onCreated={() => setShowCreateServer(false)}
         />
       )}
 
