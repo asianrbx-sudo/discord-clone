@@ -6,8 +6,9 @@ import { doc, setDoc, getDoc, serverTimestamp } from 'firebase/firestore'
 import Auth from './components/Auth'
 import AddFriend from './components/AddFriend'
 import FriendRequests from './components/FriendRequests'
+import FriendsList from './components/FriendsList'
+import DMChat from './components/DMChat'
 
-const dms = []
 const tabs = ['Online', 'All', 'Pending', 'Blocked']
 
 const statusOptions = [
@@ -33,6 +34,8 @@ export default function App() {
   const [deafened, setDeafened] = useState(false)
   const [showStatusMenu, setShowStatusMenu] = useState(false)
   const [showAddFriend, setShowAddFriend] = useState(false)
+  const [activeDM, setActiveDM] = useState(null)
+  const [dmList, setDmList] = useState([])
 
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, async (u) => {
@@ -83,6 +86,19 @@ export default function App() {
     setTimeout(() => { setSaved(false); setEditingName(false) }, 1500)
   }
 
+  const handleOpenDM = (friend) => {
+    // Create a consistent DM ID based on both user UIDs
+    const dmId = [auth.currentUser.uid, friend.uid].sort().join('_')
+    setActiveDM({ friend, dmId })
+    setActiveNav('dm')
+    setShowAddFriend(false)
+    // Add to DM list if not already there
+    setDmList(prev => {
+      if (prev.find(d => d.uid === friend.uid)) return prev
+      return [...prev, friend]
+    })
+  }
+
   const currentStatus = statusOptions.find(s => s.value === status)
 
   if (loading) return (
@@ -115,14 +131,33 @@ export default function App() {
         </div>
 
         <div
-          onClick={(e) => { e.stopPropagation(); setActiveNav('friends'); setShowAddFriend(false) }}
+          onClick={(e) => { e.stopPropagation(); setActiveNav('friends'); setShowAddFriend(false); setActiveDM(null) }}
           className={`mx-2 px-2 py-2 rounded flex items-center gap-2 cursor-pointer ${activeNav === 'friends' ? 'bg-gray-600 text-white' : 'text-gray-400 hover:bg-gray-700 hover:text-white'}`}
         >
           <span>👥</span> Friends
         </div>
 
+        {/* DM List */}
         <p className="text-gray-500 text-xs font-bold px-4 mt-4 mb-1 uppercase">Direct Messages</p>
-        {dms.length === 0 && <p className="text-gray-500 text-xs px-4 mt-2">No DMs yet</p>}
+        {dmList.length === 0 && <p className="text-gray-500 text-xs px-4 mt-2">No DMs yet</p>}
+        {dmList.map(friend => (
+          <div
+            key={friend.uid}
+            onClick={() => handleOpenDM(friend)}
+            className={`mx-2 px-2 py-1.5 rounded flex items-center gap-2 cursor-pointer ${activeDM?.friend.uid === friend.uid ? 'bg-gray-600 text-white' : 'text-gray-400 hover:bg-gray-700 hover:text-white'}`}
+          >
+            {friend.photoURL ? (
+              <img src={friend.photoURL} className="w-8 h-8 rounded-full object-cover" />
+            ) : (
+              <div className="w-8 h-8 bg-indigo-500 rounded-full flex items-center justify-center font-bold text-xs">
+                {friend.displayName?.[0]?.toUpperCase()}
+              </div>
+            )}
+            <div className="flex-1 overflow-hidden">
+              <p className="font-medium text-white truncate text-xs">{friend.displayName}</p>
+            </div>
+          </div>
+        ))}
 
         {/* Profile Card + User Panel */}
         <div className="mt-auto">
@@ -293,40 +328,49 @@ export default function App() {
 
       {/* Main Area */}
       <div className="flex-1 flex flex-col">
-        <div className="px-4 py-3 border-b border-gray-900 flex items-center gap-4 shadow-md">
-          <span className="font-bold flex items-center gap-2">👥 Friends</span>
-          <div className="flex gap-1">
-            {tabs.map(tab => (
-              <button
-                key={tab}
-                onClick={() => { setActiveTab(tab); setShowAddFriend(false) }}
-                className={`px-3 py-1 rounded text-sm ${activeTab === tab && !showAddFriend ? 'bg-gray-600 text-white' : 'text-gray-400 hover:bg-gray-700 hover:text-white'}`}
-              >
-                {tab}
-              </button>
-            ))}
-          </div>
-          <button
-            onClick={() => setShowAddFriend(true)}
-            className={`ml-auto px-3 py-1 rounded font-medium text-sm ${showAddFriend ? 'bg-gray-600 text-white' : 'bg-green-600 hover:bg-green-500 text-white'}`}
-          >
-            Add Friend
-          </button>
-        </div>
 
-        <div className="flex-1 overflow-hidden">
-          {showAddFriend ? (
-            <AddFriend onClose={() => setShowAddFriend(false)} />
-          ) : activeTab === 'Pending' ? (
-            <FriendRequests />
-          ) : (
-            <div className="flex-1 h-full flex items-center justify-center flex-col gap-3 text-gray-500">
-              <span className="text-5xl">👥</span>
-              <p className="font-bold text-white">No friends yet!</p>
-              <p className="text-sm">Click Add Friend to get started.</p>
+        {/* DM Chat View */}
+        {activeNav === 'dm' && activeDM ? (
+          <DMChat friend={activeDM.friend} dmId={activeDM.dmId} />
+        ) : (
+          <>
+            <div className="px-4 py-3 border-b border-gray-900 flex items-center gap-4 shadow-md">
+              <span className="font-bold flex items-center gap-2">👥 Friends</span>
+              <div className="flex gap-1">
+                {tabs.map(tab => (
+                  <button
+                    key={tab}
+                    onClick={() => { setActiveTab(tab); setShowAddFriend(false) }}
+                    className={`px-3 py-1 rounded text-sm ${activeTab === tab && !showAddFriend ? 'bg-gray-600 text-white' : 'text-gray-400 hover:bg-gray-700 hover:text-white'}`}
+                  >
+                    {tab}
+                  </button>
+                ))}
+              </div>
+              <button
+                onClick={() => setShowAddFriend(true)}
+                className={`ml-auto px-3 py-1 rounded font-medium text-sm ${showAddFriend ? 'bg-gray-600 text-white' : 'bg-green-600 hover:bg-green-500 text-white'}`}
+              >
+                Add Friend
+              </button>
             </div>
-          )}
-        </div>
+
+            <div className="flex-1 overflow-hidden">
+              {showAddFriend ? (
+                <AddFriend onClose={() => setShowAddFriend(false)} />
+              ) : activeTab === 'Pending' ? (
+                <FriendRequests />
+              ) : activeTab === 'All' || activeTab === 'Online' ? (
+                <FriendsList onOpenDM={handleOpenDM} />
+              ) : (
+                <div className="flex-1 h-full flex items-center justify-center flex-col gap-3 text-gray-500">
+                  <span className="text-5xl">👥</span>
+                  <p className="font-bold text-white">Nothing here yet!</p>
+                </div>
+              )}
+            </div>
+          </>
+        )}
       </div>
 
     </div>
