@@ -177,7 +177,7 @@ export default function App() {
 
         {/* Add Server */}
         <div
-          onClick={() => setShowCreateServer(true)}
+          onClick={(e) => { e.stopPropagation(); setShowCreateServer(true) }}
           className="w-10 h-10 bg-gray-700 hover:bg-green-500 rounded-full hover:rounded-xl transition-all flex items-center justify-center cursor-pointer text-green-400 hover:text-white font-bold text-lg"
         >
           +
