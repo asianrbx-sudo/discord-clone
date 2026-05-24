@@ -194,8 +194,8 @@ export default function App() {
           </div>
 
           <div
-            onClick={(e) => { e.stopPropagation(); setActiveNav('friends'); setShowAddFriend(false); setActiveDM(null) }}
-            className={`mx-2 px-2 py-2 rounded flex items-center gap-2 cursor-pointer ${activeNav === 'friends' ? 'bg-gray-600 text-white' : 'text-gray-400 hover:bg-gray-700 hover:text-white'}`}
+            onClick={(e) => { e.stopPropagation(); alert('clicked!'); setShowCreateServer(true) }}
+            className="w-10 h-10 bg-gray-700 hover:bg-green-500 rounded-full hover:rounded-xl transition-all flex items-center justify-center cursor-pointer text-green-400 hover:text-white font-bold text-lg"
           >
             <span>👥</span> Friends
             {pendingCount > 0 && (
