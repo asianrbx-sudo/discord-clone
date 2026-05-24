@@ -31,6 +31,7 @@ export default function DMChat({ friend, dmId }) {
 
   const sendMessage = async () => {
     if (!input.trim()) return
+    if (input.length > 2000) return
     const text = input
     setInput('')
     await addDoc(collection(db, 'dms', dmId, 'messages'), {
@@ -79,7 +80,7 @@ export default function DMChat({ friend, dmId }) {
                   {msg.createdAt?.toDate().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                 </span>
               </div>
-              <p className="text-sm text-gray-200">{msg.text}</p>
+              <p className="text-sm text-gray-200 break-all">{msg.text}</p>
             </div>
           </div>
         ))}
@@ -93,9 +94,15 @@ export default function DMChat({ friend, dmId }) {
             className="flex-1 bg-transparent outline-none text-sm placeholder-gray-400"
             placeholder={`Message @${friend.displayName}`}
             value={input}
-            onChange={e => setInput(e.target.value)}
+            onChange={e => e.target.value.length <= 2000 && setInput(e.target.value)}
             onKeyDown={e => e.key === 'Enter' && sendMessage()}
+            maxLength={2000}
           />
+          {input.length > 1800 && (
+            <span className={`text-xs ${input.length > 1950 ? 'text-red-400' : 'text-yellow-400'}`}>
+                {2000 - input.length}
+            </span>
+            )}
           <button onClick={sendMessage} className="text-gray-400 hover:text-white">➤</button>
         </div>
       </div>
