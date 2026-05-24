@@ -95,68 +95,50 @@ export default function VoiceCall({ friend, dmId, onEnd }) {
   }
 
   return (
-    <div className="absolute inset-0 bg-gray-700 flex flex-col z-40">
+    <div className="absolute inset-x-0 top-0 bg-gray-800 border-b-2 border-gray-900 z-40">
+      <div className="flex items-center justify-between px-6 py-3">
 
-      {/* Top bar */}
-      <div className="px-4 py-3 border-b border-gray-900 flex items-center gap-2 shadow-md">
-        {friend.photoURL ? (
-          <img src={friend.photoURL} className="w-7 h-7 rounded-full object-cover" />
-        ) : (
-          <div className="w-7 h-7 bg-indigo-500 rounded-full flex items-center justify-center font-bold text-xs">
-            {friend.displayName?.[0]?.toUpperCase()}
+        {/* Left: Avatar + Name + Status */}
+        <div className="flex items-center gap-3">
+          {friend.photoURL ? (
+            <img src={friend.photoURL} className="w-10 h-10 rounded-full object-cover" />
+          ) : (
+            <div className="w-10 h-10 bg-indigo-500 rounded-full flex items-center justify-center text-lg font-bold text-white">
+              {friend.displayName?.[0]?.toUpperCase()}
+            </div>
+          )}
+          <div>
+            <p className="text-white font-bold text-sm">{friend.displayName}</p>
+            <p className={`text-xs ${status === 'active' ? 'text-green-400' : 'text-yellow-400'}`}>
+              {status === 'active' ? '● Voice Connected' : '● Calling...'}
+            </p>
           </div>
-        )}
-        <span className="font-bold text-white">{friend.displayName}</span>
-        <span className={`ml-2 text-xs ${status === 'active' ? 'text-green-400' : 'text-yellow-400'}`}>
-          {status === 'active' ? '● Voice Connected' : '● Calling...'}
-        </span>
-      </div>
+        </div>
 
-      {/* Main call area */}
-      <div className="flex-1 flex flex-col items-center justify-center gap-6">
-        {friend.photoURL ? (
-          <img src={friend.photoURL} className="w-28 h-28 rounded-full object-cover" />
-        ) : (
-          <div className="w-28 h-28 bg-indigo-500 rounded-full flex items-center justify-center text-5xl font-bold text-white">
-            {friend.displayName?.[0]?.toUpperCase()}
-          </div>
-        )}
-        <p className="text-white font-bold text-xl">{friend.displayName}</p>
-        <p className="text-gray-400 text-sm">
-          {status === 'active' ? 'Voice Connected' : 'Calling...'}
-        </p>
-      </div>
-
-      {/* Controls bar */}
-      <div className="flex items-center justify-center gap-3 p-6 border-t border-gray-900">
-        {/* Mute */}
-        <button
-          onClick={toggleMute}
-          title={isMuted ? 'Unmute' : 'Mute'}
-          className={`flex flex-col items-center gap-1 px-4 py-2 rounded-lg transition ${isMuted ? 'bg-red-500 hover:bg-red-400' : 'bg-gray-600 hover:bg-gray-500'}`}
-        >
-          <span className="text-xl">{isMuted ? '🔇' : '🎤'}</span>
-          <span className="text-xs text-white">{isMuted ? 'Unmute' : 'Mute'}</span>
-        </button>
-
-        {/* Deafen */}
-        <button
-          onClick={toggleDeafen}
-          title={isDeafened ? 'Undeafen' : 'Deafen'}
-          className={`flex flex-col items-center gap-1 px-4 py-2 rounded-lg transition ${isDeafened ? 'bg-red-500 hover:bg-red-400' : 'bg-gray-600 hover:bg-gray-500'}`}
-        >
-          <span className="text-xl">{isDeafened ? '🔕' : '🎧'}</span>
-          <span className="text-xs text-white">{isDeafened ? 'Undeafen' : 'Deafen'}</span>
-        </button>
-
-        {/* End Call */}
-        <button
-          onClick={endCall}
-          className="flex flex-col items-center gap-1 px-6 py-2 bg-red-500 hover:bg-red-400 rounded-lg transition"
-        >
-          <span className="text-xl">📵</span>
-          <span className="text-xs text-white">End Call</span>
-        </button>
+        {/* Right: Controls */}
+        <div className="flex items-center gap-2">
+          <button
+            onClick={toggleMute}
+            title={isMuted ? 'Unmute' : 'Mute'}
+            className={`w-9 h-9 rounded-full flex items-center justify-center transition text-white ${isMuted ? 'bg-red-500 hover:bg-red-400' : 'bg-gray-600 hover:bg-gray-500'}`}
+          >
+            {isMuted ? '🔇' : '🎤'}
+          </button>
+          <button
+            onClick={toggleDeafen}
+            title={isDeafened ? 'Undeafen' : 'Deafen'}
+            className={`w-9 h-9 rounded-full flex items-center justify-center transition text-white ${isDeafened ? 'bg-red-500 hover:bg-red-400' : 'bg-gray-600 hover:bg-gray-500'}`}
+          >
+            {isDeafened ? '🔕' : '🎧'}
+          </button>
+          <button
+            onClick={endCall}
+            title="End Call"
+            className="w-9 h-9 bg-red-500 hover:bg-red-400 rounded-full flex items-center justify-center transition text-white"
+          >
+            📵
+          </button>
+        </div>
       </div>
 
       <audio ref={remoteAudioRef} autoPlay />
